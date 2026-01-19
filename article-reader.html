@@ -407,76 +407,9 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.6.0/Readability.min.js"></script>
     <script>
         const CORS_PROXY = 'https://api.allorigins.win/get?url=';
-
-        const CONTENT_SELECTORS = [
-            'article',
-            '[role="article"]',
-            'main',
-            '.post-content',
-            '.entry-content',
-            '.article-content',
-            '.article-body',
-            '.post-body',
-            '.story-body',
-            '.content-body',
-            '#article-body',
-            '#article-content',
-            '.markdown-body',
-            '.prose',
-        ];
-
-        const JUNK_SELECTORS = [
-            'script',
-            'style',
-            'noscript',
-            'iframe',
-            'nav',
-            'header',
-            'footer',
-            'aside',
-            'form',
-            'button',
-            'svg',
-            '[role="navigation"]',
-            '[role="banner"]',
-            '[role="contentinfo"]',
-            '[role="complementary"]',
-            '[role="button"]',
-            '.nav',
-            '.menu',
-            '.sidebar',
-            '.comments',
-            '.comment',
-            '.share',
-            '.social',
-            '.advertisement',
-            '.ad',
-            '.ads',
-            '.promo',
-            '.related',
-            '.recommended',
-            '.newsletter',
-            '.subscribe',
-            '.popup',
-            '.modal',
-            '.subscribe-widget',
-            '.subscription-widget-wrap',
-            '.button-wrapper',
-            '.captioned-button-wrap',
-            '.post-cta',
-            '.digest-cta',
-            '.paywall',
-            '.paywall-jump',
-            '[data-component-name="SubscribeWidget"]',
-            '[data-component-name="DigestPostEmbed"]',
-            '[data-component-name="EmbeddedPostPreview"]',
-            '.embedded-post-wrap',
-            '.post-ufi',
-            '.like-button-container',
-            '.share-dialog',
-        ];
 
         document.getElementById('url-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -551,79 +484,24 @@
             base.href = sourceUrl;
             doc.head.prepend(base);
 
-            const title = extractTitle(doc);
-            const contentElement = findContentElement(doc);
+            const documentClone = doc.cloneNode(true);
+            const reader = new Readability(documentClone, {
+                charThreshold: 500
+            });
+            const article = reader.parse();
 
-            if (!contentElement) {
+            if (!article || !article.content) {
                 throw new Error('Could not find article content');
             }
 
-            const cleanedContent = cleanContent(contentElement.cloneNode(true));
-
-            const firstH1 = cleanedContent.querySelector('h1');
-            if (firstH1) {
-                firstH1.remove();
-            }
+            const container = doc.createElement('div');
+            container.innerHTML = article.content;
+            sanitizeContent(container, sourceUrl);
 
             return {
-                title,
-                content: cleanedContent.innerHTML
+                title: article.title || 'Untitled Article',
+                content: container.innerHTML
             };
-        }
-
-        function extractTitle(doc) {
-            const ogTitle = doc.querySelector('meta[property="og:title"]');
-            if (ogTitle) {
-                return ogTitle.getAttribute('content');
-            }
-
-            const h1 = doc.querySelector('article h1, main h1, h1');
-            if (h1) {
-                return h1.textContent.trim();
-            }
-
-            const title = doc.querySelector('title');
-            if (title) {
-                return title.textContent.trim().split('|')[0].split('-')[0].trim();
-            }
-
-            return 'Untitled Article';
-        }
-
-        function findContentElement(doc) {
-            for (const selector of CONTENT_SELECTORS) {
-                const element = doc.querySelector(selector);
-                if (element && hasSubstantialContent(element)) {
-                    return element;
-                }
-            }
-
-            return findLargestTextBlock(doc);
-        }
-
-        function hasSubstantialContent(element) {
-            const text = element.textContent.trim();
-            const paragraphs = element.querySelectorAll('p');
-            return text.length > 500 || paragraphs.length >= 3;
-        }
-
-        function findLargestTextBlock(doc) {
-            const candidates = doc.querySelectorAll('div, section');
-            let best = null;
-            let bestScore = 0;
-
-            for (const el of candidates) {
-                const paragraphs = el.querySelectorAll('p');
-                const textLength = el.textContent.trim().length;
-                const score = paragraphs.length * 100 + textLength;
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    best = el;
-                }
-            }
-
-            return best;
         }
 
         function sanitizeUrl(url, allowMailto = false) {
@@ -642,28 +520,7 @@
             return null;
         }
 
-        function cleanContent(element) {
-            for (const selector of JUNK_SELECTORS) {
-                element.querySelectorAll(selector).forEach(el => el.remove());
-            }
-
-            element.querySelectorAll('[class]').forEach(el => {
-                const className = el.getAttribute('class') || '';
-                const junkPatterns = ['nav', 'menu', 'sidebar', 'comment', 'share', 'social', 'ad-', 'promo', 'related', 'recommend', 'subscribe', 'button', 'cta', 'widget', 'ufi', 'like-button'];
-                if (junkPatterns.some(pattern => className.toLowerCase().includes(pattern))) {
-                    el.remove();
-                }
-            });
-
-            element.querySelectorAll('[style]').forEach(el => {
-                const style = el.getAttribute('style').toLowerCase();
-                if (style.includes('display: none') || style.includes('display:none') ||
-                    style.includes('visibility: hidden') || style.includes('visibility:hidden')) {
-                    el.remove();
-                }
-            });
-
-            const baseUrl = document.querySelector('base')?.href || window.location.href;
+        function sanitizeContent(element, sourceUrl) {
             element.querySelectorAll('a').forEach(a => {
                 const href = a.getAttribute('href');
                 if (href && href.startsWith('#')) {
@@ -682,10 +539,16 @@
             element.querySelectorAll('img').forEach(img => {
                 const src = img.getAttribute('src');
                 const dataSrc = img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
+                const srcset = img.getAttribute('srcset');
+                const sizes = img.getAttribute('sizes');
+                const loading = img.getAttribute('loading');
                 const finalSrc = dataSrc || src;
                 const safeSrc = sanitizeUrl(finalSrc, false);
                 if (safeSrc) {
                     img.setAttribute('src', safeSrc);
+                    if (srcset) img.setAttribute('srcset', srcset);
+                    if (sizes) img.setAttribute('sizes', sizes);
+                    if (loading) img.setAttribute('loading', loading);
                 } else {
                     img.remove();
                     return;
