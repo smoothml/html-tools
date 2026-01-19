@@ -626,6 +626,22 @@
             return best;
         }
 
+        function sanitizeUrl(url, allowMailto = false) {
+            if (!url) return null;
+            try {
+                const parsed = new URL(url, window.location.href);
+                const allowedProtocols = allowMailto
+                    ? ['http:', 'https:', 'mailto:']
+                    : ['http:', 'https:'];
+                if (allowedProtocols.includes(parsed.protocol)) {
+                    return parsed.href;
+                }
+            } catch {
+                // Invalid URL
+            }
+            return null;
+        }
+
         function cleanContent(element) {
             for (const selector of JUNK_SELECTORS) {
                 element.querySelectorAll(selector).forEach(el => el.remove());
@@ -647,14 +663,17 @@
                 }
             });
 
+            const baseUrl = document.querySelector('base')?.href || window.location.href;
             element.querySelectorAll('a').forEach(a => {
                 const href = a.getAttribute('href');
-                if (href && !href.startsWith('http') && !href.startsWith('#')) {
-                    try {
-                        const absoluteUrl = new URL(href, document.querySelector('base')?.href || window.location.href);
-                        a.setAttribute('href', absoluteUrl.href);
-                    } catch {
-                    }
+                if (href && href.startsWith('#')) {
+                    return;
+                }
+                const safeHref = sanitizeUrl(href, true);
+                if (safeHref) {
+                    a.setAttribute('href', safeHref);
+                } else {
+                    a.removeAttribute('href');
                 }
                 a.setAttribute('target', '_blank');
                 a.setAttribute('rel', 'noopener noreferrer');
@@ -663,8 +682,13 @@
             element.querySelectorAll('img').forEach(img => {
                 const src = img.getAttribute('src');
                 const dataSrc = img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
-                if (dataSrc) {
-                    img.setAttribute('src', dataSrc);
+                const finalSrc = dataSrc || src;
+                const safeSrc = sanitizeUrl(finalSrc, false);
+                if (safeSrc) {
+                    img.setAttribute('src', safeSrc);
+                } else {
+                    img.remove();
+                    return;
                 }
                 img.removeAttribute('srcset');
                 img.removeAttribute('loading');
