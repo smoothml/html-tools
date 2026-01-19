@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Reader</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #222;
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #url-input {
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #url-input:focus {
+            border-color: #007bff;
+        }
+
+        #extract-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #extract-btn:hover {
+            background: #0056b3;
+        }
+
+        #extract-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #ddd;
+            border-top-color: #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c00;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .article-content {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .article-content h1 {
+            font-size: 2em;
+            margin-top: 0;
+            text-align: left;
+        }
+
+        .article-content h2 {
+            font-size: 1.5em;
+            margin-top: 1.5em;
+        }
+
+        .article-content h3 {
+            font-size: 1.25em;
+            margin-top: 1.25em;
+        }
+
+        .article-content p {
+            margin: 1em 0;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1em 0;
+        }
+
+        .article-content a {
+            color: #007bff;
+        }
+
+        .article-content blockquote {
+            border-left: 4px solid #007bff;
+            margin: 1em 0;
+            padding: 0.5em 1em;
+            background: #f9f9f9;
+        }
+
+        .article-content pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .article-content code {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .article-content ul, .article-content ol {
+            padding-left: 1.5em;
+        }
+
+        .article-content li {
+            margin: 0.5em 0;
+        }
+
+        .source-link {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .source-link a {
+            color: #007bff;
+            word-break: break-all;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .speed-read-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        #speed-read-btn,
+        .primary-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #speed-read-btn:hover,
+        .primary-btn:hover {
+            background: #0056b3;
+        }
+
+        .wpm-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #wpm-slider {
+            width: 150px;
+            cursor: pointer;
+        }
+
+        #wpm-display {
+            min-width: 80px;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .spritz-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            padding: 40px;
+            margin-top: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .spritz-word-display {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80px;
+            position: relative;
+        }
+
+        .spritz-before {
+            text-align: right;
+            min-width: 200px;
+            color: #333;
+        }
+
+        .spritz-orp {
+            color: #e74c3c;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .spritz-after {
+            text-align: left;
+            min-width: 200px;
+            color: #333;
+        }
+
+        .spritz-progress {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 30px;
+        }
+
+        .spritz-progress-bar {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .spritz-progress-fill {
+            height: 100%;
+            background: #007bff;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .spritz-progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .spritz-pause-indicator {
+            display: none;
+            font-size: 14px;
+            color: #666;
+            margin-top: 15px;
+        }
+
+        .spritz-container.paused .spritz-word-display {
+            opacity: 0.7;
+        }
+
+        .spritz-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .spritz-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .spritz-btn:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+
+        .spritz-btn:active {
+            transform: scale(0.95);
+        }
+
+        .spritz-btn-primary {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+
+        .spritz-btn-primary:hover {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Article Reader</h1>
+
+        <div class="input-section">
+            <input type="url" id="url-input" placeholder="Enter article URL (e.g., https://example.com/article)">
+            <button id="extract-btn" onclick="extractArticle()">Extract</button>
+            <button id="new-article-btn" class="primary-btn hidden" onclick="newArticle()">New Article</button>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Extracting article content...</p>
+        </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <div id="result" class="hidden">
+            <div id="speed-read-controls" class="speed-read-controls">
+                <button id="speed-read-btn" onclick="enterSpeedReadMode()">Speed Read</button>
+                <button id="normal-read-btn" class="primary-btn hidden" onclick="exitSpeedReadMode()">Take Your Time</button>
+                <div id="wpm-slider-container" class="wpm-slider-container hidden">
+                    <input type="range" id="wpm-slider" min="100" max="1000" value="600" step="25">
+                    <span id="wpm-display">600 WPM</span>
+                </div>
+            </div>
+
+            <div id="spritz-container" class="spritz-container hidden">
+                <div class="spritz-word-display">
+                    <span id="spritz-before" class="spritz-before"></span>
+                    <span id="spritz-orp" class="spritz-orp"></span>
+                    <span id="spritz-after" class="spritz-after"></span>
+                </div>
+                <div class="spritz-controls">
+                    <button id="skip-back-btn" class="spritz-btn" onclick="skipWords(-5)" title="Skip back 5 words">⏪</button>
+                    <button id="play-pause-btn" class="spritz-btn spritz-btn-primary" onclick="toggleSpeedRead()" title="Play/Pause">▶</button>
+                    <button id="skip-forward-btn" class="spritz-btn" onclick="skipWords(5)" title="Skip forward 5 words">⏩</button>
+                </div>
+                <div class="spritz-progress">
+                    <div class="spritz-progress-bar">
+                        <div id="spritz-progress-fill" class="spritz-progress-fill"></div>
+                    </div>
+                    <div id="spritz-progress-text" class="spritz-progress-text">0 / 0</div>
+                </div>
+            </div>
+
+            <div id="article" class="article-content"></div>
+            <div class="source-link">
+                Source: <a id="source-url" href="#" target="_blank"></a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CORS_PROXY = 'https://api.allorigins.win/get?url=';
+
+        const CONTENT_SELECTORS = [
+            'article',
+            '[role="article"]',
+            'main',
+            '.post-content',
+            '.entry-content',
+            '.article-content',
+            '.article-body',
+            '.post-body',
+            '.story-body',
+            '.content-body',
+            '#article-body',
+            '#article-content',
+            '.markdown-body',
+            '.prose',
+        ];
+
+        const JUNK_SELECTORS = [
+            'script',
+            'style',
+            'noscript',
+            'iframe',
+            'nav',
+            'header',
+            'footer',
+            'aside',
+            'form',
+            'button',
+            'svg',
+            '[role="navigation"]',
+            '[role="banner"]',
+            '[role="contentinfo"]',
+            '[role="complementary"]',
+            '[role="button"]',
+            '.nav',
+            '.menu',
+            '.sidebar',
+            '.comments',
+            '.comment',
+            '.share',
+            '.social',
+            '.advertisement',
+            '.ad',
+            '.ads',
+            '.promo',
+            '.related',
+            '.recommended',
+            '.newsletter',
+            '.subscribe',
+            '.popup',
+            '.modal',
+            '.subscribe-widget',
+            '.subscription-widget-wrap',
+            '.button-wrapper',
+            '.captioned-button-wrap',
+            '.post-cta',
+            '.digest-cta',
+            '.paywall',
+            '.paywall-jump',
+            '[data-component-name="SubscribeWidget"]',
+            '[data-component-name="DigestPostEmbed"]',
+            '[data-component-name="EmbeddedPostPreview"]',
+            '.embedded-post-wrap',
+            '.post-ufi',
+            '.like-button-container',
+            '.share-dialog',
+        ];
+
+        document.getElementById('url-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                extractArticle();
+            }
+        });
+
+        async function extractArticle() {
+            const urlInput = document.getElementById('url-input');
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            if (!isValidUrl(url)) {
+                showError('Please enter a valid URL');
+                return;
+            }
+
+            if (speedReadState.isSpeedReadMode) {
+                exitSpeedReadMode();
+            }
+
+            showLoading(true);
+            hideError();
+            hideResult();
+
+            try {
+                const html = await fetchUrl(url);
+                const content = extractContent(html, url);
+                displayContent(content, url);
+            } catch (err) {
+                showError(`Failed to extract article: ${err.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function isValidUrl(string) {
+            try {
+                const url = new URL(string);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch {
+                return false;
+            }
+        }
+
+        async function fetchUrl(url) {
+            const proxyUrl = CORS_PROXY + encodeURIComponent(url);
+            const response = await fetch(proxyUrl);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch the URL');
+            }
+
+            const data = await response.json();
+
+            if (data.status && data.status.http_code >= 400) {
+                throw new Error(`HTTP error: ${data.status.http_code}`);
+            }
+
+            return data.contents;
+        }
+
+        function extractContent(html, sourceUrl) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const base = doc.createElement('base');
+            base.href = sourceUrl;
+            doc.head.prepend(base);
+
+            const title = extractTitle(doc);
+            const contentElement = findContentElement(doc);
+
+            if (!contentElement) {
+                throw new Error('Could not find article content');
+            }
+
+            const cleanedContent = cleanContent(contentElement.cloneNode(true));
+
+            const firstH1 = cleanedContent.querySelector('h1');
+            if (firstH1) {
+                firstH1.remove();
+            }
+
+            return {
+                title,
+                content: cleanedContent.innerHTML
+            };
+        }
+
+        function extractTitle(doc) {
+            const ogTitle = doc.querySelector('meta[property="og:title"]');
+            if (ogTitle) {
+                return ogTitle.getAttribute('content');
+            }
+
+            const h1 = doc.querySelector('article h1, main h1, h1');
+            if (h1) {
+                return h1.textContent.trim();
+            }
+
+            const title = doc.querySelector('title');
+            if (title) {
+                return title.textContent.trim().split('|')[0].split('-')[0].trim();
+            }
+
+            return 'Untitled Article';
+        }
+
+        function findContentElement(doc) {
+            for (const selector of CONTENT_SELECTORS) {
+                const element = doc.querySelector(selector);
+                if (element && hasSubstantialContent(element)) {
+                    return element;
+                }
+            }
+
+            return findLargestTextBlock(doc);
+        }
+
+        function hasSubstantialContent(element) {
+            const text = element.textContent.trim();
+            const paragraphs = element.querySelectorAll('p');
+            return text.length > 500 || paragraphs.length >= 3;
+        }
+
+        function findLargestTextBlock(doc) {
+            const candidates = doc.querySelectorAll('div, section');
+            let best = null;
+            let bestScore = 0;
+
+            for (const el of candidates) {
+                const paragraphs = el.querySelectorAll('p');
+                const textLength = el.textContent.trim().length;
+                const score = paragraphs.length * 100 + textLength;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = el;
+                }
+            }
+
+            return best;
+        }
+
+        function cleanContent(element) {
+            for (const selector of JUNK_SELECTORS) {
+                element.querySelectorAll(selector).forEach(el => el.remove());
+            }
+
+            element.querySelectorAll('[class]').forEach(el => {
+                const className = el.getAttribute('class') || '';
+                const junkPatterns = ['nav', 'menu', 'sidebar', 'comment', 'share', 'social', 'ad-', 'promo', 'related', 'recommend', 'subscribe', 'button', 'cta', 'widget', 'ufi', 'like-button'];
+                if (junkPatterns.some(pattern => className.toLowerCase().includes(pattern))) {
+                    el.remove();
+                }
+            });
+
+            element.querySelectorAll('[style]').forEach(el => {
+                const style = el.getAttribute('style').toLowerCase();
+                if (style.includes('display: none') || style.includes('display:none') ||
+                    style.includes('visibility: hidden') || style.includes('visibility:hidden')) {
+                    el.remove();
+                }
+            });
+
+            element.querySelectorAll('a').forEach(a => {
+                const href = a.getAttribute('href');
+                if (href && !href.startsWith('http') && !href.startsWith('#')) {
+                    try {
+                        const absoluteUrl = new URL(href, document.querySelector('base')?.href || window.location.href);
+                        a.setAttribute('href', absoluteUrl.href);
+                    } catch {
+                    }
+                }
+                a.setAttribute('target', '_blank');
+                a.setAttribute('rel', 'noopener noreferrer');
+            });
+
+            element.querySelectorAll('img').forEach(img => {
+                const src = img.getAttribute('src');
+                const dataSrc = img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
+                if (dataSrc) {
+                    img.setAttribute('src', dataSrc);
+                }
+                img.removeAttribute('srcset');
+                img.removeAttribute('loading');
+            });
+
+            element.querySelectorAll('*').forEach(el => {
+                const allowedAttrs = ['href', 'src', 'alt', 'title', 'target', 'rel'];
+                const attrs = Array.from(el.attributes);
+                attrs.forEach(attr => {
+                    if (!allowedAttrs.includes(attr.name)) {
+                        el.removeAttribute(attr.name);
+                    }
+                });
+            });
+
+            return element;
+        }
+
+        function displayContent(content, url) {
+            const articleEl = document.getElementById('article');
+            const sourceUrlEl = document.getElementById('source-url');
+
+            let titleHtml = '';
+            if (content.title) {
+                titleHtml = `<h1>${escapeHtml(content.title)}</h1>`;
+            }
+
+            articleEl.innerHTML = titleHtml + content.content;
+            sourceUrlEl.href = url;
+            sourceUrlEl.textContent = url;
+
+            document.getElementById('result').classList.remove('hidden');
+            document.getElementById('new-article-btn').classList.remove('hidden');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+            document.getElementById('extract-btn').disabled = show;
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('error').classList.add('hidden');
+        }
+
+        function hideResult() {
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('new-article-btn').classList.add('hidden');
+        }
+
+        function newArticle() {
+            if (speedReadState.isSpeedReadMode) {
+                exitSpeedReadMode();
+            }
+            hideResult();
+            const urlInput = document.getElementById('url-input');
+            urlInput.value = '';
+            urlInput.focus();
+        }
+
+        const speedReadState = {
+            words: [],
+            currentIndex: 0,
+            isPlaying: false,
+            wpm: 600,
+            timeoutId: null,
+            isSpeedReadMode: false
+        };
+
+        function extractWordsFromArticle() {
+            const article = document.getElementById('article');
+            const text = article.textContent || '';
+            return text.split(/\s+/).filter(word => word.length > 0);
+        }
+
+        function calculateORP(word) {
+            const cleanWord = word.replace(/^[^\w]+|[^\w]+$/g, '');
+            const len = cleanWord.length;
+
+            let orpIndex;
+            if (len <= 1) orpIndex = 0;
+            else if (len <= 3) orpIndex = 0;
+            else if (len <= 5) orpIndex = 1;
+            else if (len <= 9) orpIndex = 2;
+            else if (len <= 13) orpIndex = 3;
+            else orpIndex = 4;
+
+            const leadingPunct = word.match(/^[^\w]*/)[0];
+            const actualIndex = leadingPunct.length + orpIndex;
+
+            return {
+                before: word.substring(0, actualIndex),
+                orp: word.charAt(actualIndex) || '',
+                after: word.substring(actualIndex + 1)
+            };
+        }
+
+        function displayWord(word) {
+            const parts = calculateORP(word);
+            document.getElementById('spritz-before').textContent = parts.before;
+            document.getElementById('spritz-orp').textContent = parts.orp;
+            document.getElementById('spritz-after').textContent = parts.after;
+        }
+
+        function updateProgress() {
+            const total = speedReadState.words.length;
+            const current = speedReadState.currentIndex + 1;
+            const percent = total > 0 ? (current / total) * 100 : 0;
+
+            document.getElementById('spritz-progress-fill').style.width = percent + '%';
+            document.getElementById('spritz-progress-text').textContent = current + ' / ' + total;
+        }
+
+        function getWordDelay(word) {
+            const baseDelay = 60000 / speedReadState.wpm;
+
+            if (/[.!?]$/.test(word)) {
+                return baseDelay * 1.5;
+            }
+            if (/[,;:]$/.test(word)) {
+                return baseDelay * 1.25;
+            }
+            return baseDelay;
+        }
+
+        function advanceWord() {
+            if (!speedReadState.isPlaying) return;
+
+            if (speedReadState.currentIndex >= speedReadState.words.length) {
+                pauseSpeedRead();
+                return;
+            }
+
+            const word = speedReadState.words[speedReadState.currentIndex];
+            displayWord(word);
+            updateProgress();
+
+            speedReadState.currentIndex++;
+
+            if (speedReadState.currentIndex < speedReadState.words.length) {
+                const delay = getWordDelay(word);
+                speedReadState.timeoutId = setTimeout(advanceWord, delay);
+            } else {
+                pauseSpeedRead();
+            }
+        }
+
+        function startSpeedRead() {
+            if (speedReadState.currentIndex >= speedReadState.words.length) {
+                speedReadState.currentIndex = 0;
+            }
+
+            speedReadState.isPlaying = true;
+            document.getElementById('spritz-container').classList.remove('paused');
+            updatePlayPauseButton();
+            advanceWord();
+        }
+
+        function pauseSpeedRead() {
+            speedReadState.isPlaying = false;
+            if (speedReadState.timeoutId) {
+                clearTimeout(speedReadState.timeoutId);
+                speedReadState.timeoutId = null;
+            }
+            document.getElementById('spritz-container').classList.add('paused');
+            updatePlayPauseButton();
+        }
+
+        function toggleSpeedRead() {
+            if (speedReadState.isPlaying) {
+                pauseSpeedRead();
+            } else {
+                startSpeedRead();
+            }
+        }
+
+        function skipWords(delta) {
+            const wasPlaying = speedReadState.isPlaying;
+            pauseSpeedRead();
+            speedReadState.currentIndex = Math.max(0, Math.min(
+                speedReadState.words.length - 1,
+                speedReadState.currentIndex + delta
+            ));
+            if (speedReadState.words.length > 0) {
+                displayWord(speedReadState.words[speedReadState.currentIndex]);
+                updateProgress();
+            }
+        }
+
+        function handleSpeedReadKeydown(event) {
+            if (!speedReadState.isSpeedReadMode) return;
+
+            if (event.code === 'Space') {
+                event.preventDefault();
+                toggleSpeedRead();
+            } else if (event.code === 'ArrowLeft') {
+                event.preventDefault();
+                skipWords(-5);
+            } else if (event.code === 'ArrowRight') {
+                event.preventDefault();
+                skipWords(5);
+            } else if (event.code === 'Escape') {
+                event.preventDefault();
+                exitSpeedReadMode();
+            }
+        }
+
+        function handleWPMChange(event) {
+            speedReadState.wpm = parseInt(event.target.value, 10);
+            document.getElementById('wpm-display').textContent = speedReadState.wpm + ' WPM';
+        }
+
+        function updatePlayPauseButton() {
+            const btn = document.getElementById('play-pause-btn');
+            btn.textContent = speedReadState.isPlaying ? '⏸' : '▶';
+        }
+
+        function enterSpeedReadMode() {
+            speedReadState.words = extractWordsFromArticle();
+            if (speedReadState.words.length === 0) {
+                return;
+            }
+
+            speedReadState.currentIndex = 0;
+            speedReadState.isSpeedReadMode = true;
+
+            document.getElementById('article').classList.add('hidden');
+            document.querySelector('.source-link').classList.add('hidden');
+            document.getElementById('spritz-container').classList.remove('hidden');
+            document.getElementById('wpm-slider-container').classList.remove('hidden');
+            document.getElementById('speed-read-btn').classList.add('hidden');
+            document.getElementById('normal-read-btn').classList.remove('hidden');
+
+            document.addEventListener('keydown', handleSpeedReadKeydown);
+
+            displayWord(speedReadState.words[0]);
+            updateProgress();
+            document.getElementById('spritz-container').classList.add('paused');
+            updatePlayPauseButton();
+        }
+
+        function exitSpeedReadMode() {
+            pauseSpeedRead();
+            speedReadState.isSpeedReadMode = false;
+
+            document.getElementById('article').classList.remove('hidden');
+            document.querySelector('.source-link').classList.remove('hidden');
+            document.getElementById('spritz-container').classList.add('hidden');
+            document.getElementById('wpm-slider-container').classList.add('hidden');
+            document.getElementById('speed-read-btn').classList.remove('hidden');
+            document.getElementById('normal-read-btn').classList.add('hidden');
+
+            document.removeEventListener('keydown', handleSpeedReadKeydown);
+        }
+
+        document.getElementById('wpm-slider').addEventListener('input', handleWPMChange);
+    </script>
+</body>
+</html>
