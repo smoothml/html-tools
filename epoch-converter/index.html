@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epoch Converter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #222;
+            margin-bottom: 30px;
+        }
+
+        .converter-section {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .converter-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #444;
+            font-size: 1.25em;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #007bff;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        select {
+            min-width: 150px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .result-box.has-result {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .result-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .result-value {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 1.1em;
+            color: #222;
+            word-break: break-all;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .result-item {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .copy-btn {
+            padding: 4px 12px;
+            font-size: 12px;
+            background: #e9ecef;
+            color: #495057;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #dee2e6;
+        }
+
+        .copy-btn.copied {
+            background: #28a745;
+            color: white;
+        }
+
+        .current-time {
+            text-align: center;
+            padding: 16px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .current-time-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .current-time-value {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 1.5em;
+            color: #007bff;
+            font-weight: 600;
+        }
+
+        .hint {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        .format-examples {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .format-examples strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #444;
+        }
+
+        .format-examples code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c00;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .input-row {
+                flex-direction: column;
+            }
+
+            select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Epoch Converter</h1>
+
+        <div class="current-time">
+            <div class="current-time-label">Current Unix Epoch</div>
+            <div id="current-epoch" class="current-time-value">-</div>
+        </div>
+
+        <div class="converter-section">
+            <h2>Epoch to Human-Readable</h2>
+            <div class="input-group">
+                <label for="epoch-input">Enter epoch timestamp</label>
+                <div class="input-row">
+                    <input type="text" id="epoch-input" placeholder="e.g., 1700000000">
+                    <select id="epoch-unit">
+                        <option value="auto">Auto-detect</option>
+                        <option value="seconds">Seconds</option>
+                        <option value="milliseconds">Milliseconds</option>
+                        <option value="microseconds">Microseconds</option>
+                        <option value="nanoseconds">Nanoseconds</option>
+                    </select>
+                    <button class="btn" onclick="convertEpochToHuman()">Convert</button>
+                </div>
+                <p class="hint">Auto-detect will guess the precision based on the number of digits</p>
+            </div>
+            <div id="epoch-error" class="error hidden"></div>
+            <div id="epoch-result" class="result-box hidden">
+                <div class="result-grid">
+                    <div class="result-item">
+                        <div class="result-label">UTC</div>
+                        <div class="result-value" id="result-utc">-</div>
+                        <button class="copy-btn" onclick="copyResult('result-utc')">Copy</button>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Local Time</div>
+                        <div class="result-value" id="result-local">-</div>
+                        <button class="copy-btn" onclick="copyResult('result-local')">Copy</button>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ISO 8601</div>
+                        <div class="result-value" id="result-iso">-</div>
+                        <button class="copy-btn" onclick="copyResult('result-iso')">Copy</button>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Relative</div>
+                        <div class="result-value" id="result-relative">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Detected Precision</div>
+                        <div class="result-value" id="result-precision">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Epoch (seconds)</div>
+                        <div class="result-value" id="result-epoch-seconds">-</div>
+                        <button class="copy-btn" onclick="copyResult('result-epoch-seconds')">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="converter-section">
+            <h2>Human-Readable to Epoch</h2>
+            <div class="input-group">
+                <label for="human-input">Enter date/time</label>
+                <div class="input-row">
+                    <input type="text" id="human-input" placeholder="e.g., 2024-01-15 14:30:00">
+                    <button class="btn" onclick="convertHumanToEpoch()">Convert</button>
+                    <button class="btn btn-secondary" onclick="useCurrentTime()">Now</button>
+                </div>
+            </div>
+            <div class="format-examples">
+                <strong>Supported formats:</strong>
+                <code>2024-01-15</code>,
+                <code>2024-01-15 14:30:00</code>,
+                <code>2024-01-15T14:30:00Z</code>,
+                <code>Jan 15, 2024</code>,
+                <code>January 15, 2024 2:30 PM</code>,
+                <code>15/01/2024</code>,
+                <code>01/15/2024</code>,
+                <code>Mon Jan 15 2024 14:30:00 GMT+0000</code>
+            </div>
+            <div id="human-error" class="error hidden"></div>
+            <div id="human-result" class="result-box hidden">
+                <div class="result-grid">
+                    <div class="result-item">
+                        <div class="result-label">Seconds</div>
+                        <div class="result-value" id="result-seconds">-</div>
+                        <button class="copy-btn" onclick="copyResult('result-seconds')">Copy</button>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Milliseconds</div>
+                        <div class="result-value" id="result-milliseconds">-</div>
+                        <button class="copy-btn" onclick="copyResult('result-milliseconds')">Copy</button>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Microseconds</div>
+                        <div class="result-value" id="result-microseconds">-</div>
+                        <button class="copy-btn" onclick="copyResult('result-microseconds')">Copy</button>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Nanoseconds</div>
+                        <div class="result-value" id="result-nanoseconds">-</div>
+                        <button class="copy-btn" onclick="copyResult('result-nanoseconds')">Copy</button>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Parsed as UTC</div>
+                        <div class="result-value" id="result-parsed-utc">-</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Parsed as Local</div>
+                        <div class="result-value" id="result-parsed-local">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update current epoch display
+        function updateCurrentEpoch() {
+            const now = Math.floor(Date.now() / 1000);
+            document.getElementById('current-epoch').textContent = now;
+        }
+        updateCurrentEpoch();
+        setInterval(updateCurrentEpoch, 1000);
+
+        // Load state from URL
+        function loadFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const epoch = params.get('epoch');
+            const human = params.get('human');
+            const unit = params.get('unit');
+
+            if (epoch) {
+                document.getElementById('epoch-input').value = epoch;
+                if (unit) {
+                    document.getElementById('epoch-unit').value = unit;
+                }
+                convertEpochToHuman();
+            } else if (human) {
+                document.getElementById('human-input').value = human;
+                convertHumanToEpoch();
+            }
+        }
+
+        // Update URL with state
+        function updateUrl(type, value, unit) {
+            const params = new URLSearchParams();
+            if (type === 'epoch') {
+                params.set('epoch', value);
+                if (unit && unit !== 'auto') {
+                    params.set('unit', unit);
+                }
+            } else if (type === 'human') {
+                params.set('human', value);
+            }
+            const newUrl = window.location.pathname + '?' + params.toString();
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        // Detect epoch precision based on number of digits
+        function detectPrecision(epochStr) {
+            const epoch = BigInt(epochStr);
+            const absEpoch = epoch < 0n ? -epoch : epoch;
+            const digits = absEpoch.toString().length;
+
+            // Reasonable date range: 1970 to 2100
+            // Seconds: 0 to ~4102444800 (10 digits)
+            // Milliseconds: 0 to ~4102444800000 (13 digits)
+            // Microseconds: 0 to ~4102444800000000 (16 digits)
+            // Nanoseconds: 0 to ~4102444800000000000 (19 digits)
+
+            if (digits <= 10) {
+                return 'seconds';
+            } else if (digits <= 13) {
+                return 'milliseconds';
+            } else if (digits <= 16) {
+                return 'microseconds';
+            } else {
+                return 'nanoseconds';
+            }
+        }
+
+        // Convert epoch to milliseconds based on precision
+        function epochToMilliseconds(epochStr, precision) {
+            const epoch = BigInt(epochStr);
+            switch (precision) {
+                case 'seconds':
+                    return Number(epoch * 1000n);
+                case 'milliseconds':
+                    return Number(epoch);
+                case 'microseconds':
+                    return Number(epoch / 1000n);
+                case 'nanoseconds':
+                    return Number(epoch / 1000000n);
+                default:
+                    return Number(epoch);
+            }
+        }
+
+        // Get relative time description
+        function getRelativeTime(date) {
+            const now = new Date();
+            const diffMs = date - now;
+            const diffSeconds = Math.round(diffMs / 1000);
+            const diffMinutes = Math.round(diffMs / 60000);
+            const diffHours = Math.round(diffMs / 3600000);
+            const diffDays = Math.round(diffMs / 86400000);
+            const diffMonths = Math.round(diffMs / 2592000000);
+            const diffYears = Math.round(diffMs / 31536000000);
+
+            const abs = Math.abs;
+            const suffix = diffMs >= 0 ? 'from now' : 'ago';
+            const prefix = diffMs >= 0 ? 'in ' : '';
+
+            if (abs(diffSeconds) < 60) {
+                return abs(diffSeconds) + ' seconds ' + suffix;
+            } else if (abs(diffMinutes) < 60) {
+                return abs(diffMinutes) + ' minutes ' + suffix;
+            } else if (abs(diffHours) < 24) {
+                return abs(diffHours) + ' hours ' + suffix;
+            } else if (abs(diffDays) < 30) {
+                return abs(diffDays) + ' days ' + suffix;
+            } else if (abs(diffMonths) < 12) {
+                return abs(diffMonths) + ' months ' + suffix;
+            } else {
+                return abs(diffYears) + ' years ' + suffix;
+            }
+        }
+
+        // Convert epoch to human-readable
+        function convertEpochToHuman() {
+            const input = document.getElementById('epoch-input').value.trim();
+            const unitSelect = document.getElementById('epoch-unit');
+            const errorEl = document.getElementById('epoch-error');
+            const resultEl = document.getElementById('epoch-result');
+
+            errorEl.classList.add('hidden');
+            resultEl.classList.add('hidden');
+
+            if (!input) {
+                showError(errorEl, 'Please enter an epoch timestamp');
+                return;
+            }
+
+            // Validate input is a number
+            if (!/^-?\d+$/.test(input)) {
+                showError(errorEl, 'Invalid epoch: must be an integer');
+                return;
+            }
+
+            try {
+                let precision = unitSelect.value;
+                if (precision === 'auto') {
+                    precision = detectPrecision(input);
+                }
+
+                const ms = epochToMilliseconds(input, precision);
+                const date = new Date(ms);
+
+                if (isNaN(date.getTime())) {
+                    showError(errorEl, 'Invalid date: epoch value out of range');
+                    return;
+                }
+
+                // Format results
+                const utcOptions = {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZone: 'UTC',
+                    timeZoneName: 'short'
+                };
+                const localOptions = {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: 'short'
+                };
+
+                document.getElementById('result-utc').textContent = date.toLocaleString('en-US', utcOptions);
+                document.getElementById('result-local').textContent = date.toLocaleString('en-US', localOptions);
+                document.getElementById('result-iso').textContent = date.toISOString();
+                document.getElementById('result-relative').textContent = getRelativeTime(date);
+                document.getElementById('result-precision').textContent = precision.charAt(0).toUpperCase() + precision.slice(1);
+                document.getElementById('result-epoch-seconds').textContent = Math.floor(ms / 1000);
+
+                resultEl.classList.remove('hidden');
+                resultEl.classList.add('has-result');
+
+                updateUrl('epoch', input, unitSelect.value);
+            } catch (err) {
+                showError(errorEl, 'Error converting epoch: ' + err.message);
+            }
+        }
+
+        // Parse human-readable date string
+        function parseHumanDate(input) {
+            // Try native Date parsing first
+            let date = new Date(input);
+            if (!isNaN(date.getTime())) {
+                return date;
+            }
+
+            // Try common formats manually
+            const patterns = [
+                // DD/MM/YYYY or DD-MM-YYYY
+                {
+                    regex: /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/,
+                    parse: (m) => {
+                        // Ambiguous: try DD/MM/YYYY first, then MM/DD/YYYY
+                        const d1 = parseInt(m[1]), d2 = parseInt(m[2]), y = parseInt(m[3]);
+                        const h = m[4] ? parseInt(m[4]) : 0;
+                        const min = m[5] ? parseInt(m[5]) : 0;
+                        const s = m[6] ? parseInt(m[6]) : 0;
+
+                        // If first number > 12, it must be day
+                        if (d1 > 12) {
+                            return new Date(y, d2 - 1, d1, h, min, s);
+                        }
+                        // If second number > 12, it must be day
+                        if (d2 > 12) {
+                            return new Date(y, d1 - 1, d2, h, min, s);
+                        }
+                        // Ambiguous - assume MM/DD/YYYY (US format)
+                        return new Date(y, d1 - 1, d2, h, min, s);
+                    }
+                },
+                // YYYY/MM/DD
+                {
+                    regex: /^(\d{4})[\/](\d{1,2})[\/](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/,
+                    parse: (m) => {
+                        return new Date(
+                            parseInt(m[1]),
+                            parseInt(m[2]) - 1,
+                            parseInt(m[3]),
+                            m[4] ? parseInt(m[4]) : 0,
+                            m[5] ? parseInt(m[5]) : 0,
+                            m[6] ? parseInt(m[6]) : 0
+                        );
+                    }
+                }
+            ];
+
+            for (const pattern of patterns) {
+                const match = input.match(pattern.regex);
+                if (match) {
+                    date = pattern.parse(match);
+                    if (!isNaN(date.getTime())) {
+                        return date;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // Convert human-readable to epoch
+        function convertHumanToEpoch() {
+            const input = document.getElementById('human-input').value.trim();
+            const errorEl = document.getElementById('human-error');
+            const resultEl = document.getElementById('human-result');
+
+            errorEl.classList.add('hidden');
+            resultEl.classList.add('hidden');
+
+            if (!input) {
+                showError(errorEl, 'Please enter a date/time');
+                return;
+            }
+
+            try {
+                const date = parseHumanDate(input);
+
+                if (!date) {
+                    showError(errorEl, 'Could not parse date. Try a different format.');
+                    return;
+                }
+
+                const ms = date.getTime();
+                const seconds = Math.floor(ms / 1000);
+
+                document.getElementById('result-seconds').textContent = seconds;
+                document.getElementById('result-milliseconds').textContent = ms;
+                document.getElementById('result-microseconds').textContent = ms * 1000;
+                document.getElementById('result-nanoseconds').textContent = ms * 1000000;
+
+                const utcOptions = {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZone: 'UTC',
+                    timeZoneName: 'short'
+                };
+                const localOptions = {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: 'short'
+                };
+
+                document.getElementById('result-parsed-utc').textContent = date.toLocaleString('en-US', utcOptions);
+                document.getElementById('result-parsed-local').textContent = date.toLocaleString('en-US', localOptions);
+
+                resultEl.classList.remove('hidden');
+                resultEl.classList.add('has-result');
+
+                updateUrl('human', input);
+            } catch (err) {
+                showError(errorEl, 'Error parsing date: ' + err.message);
+            }
+        }
+
+        // Use current time
+        function useCurrentTime() {
+            const now = new Date();
+            document.getElementById('human-input').value = now.toISOString();
+            convertHumanToEpoch();
+        }
+
+        // Show error message
+        function showError(el, message) {
+            el.textContent = message;
+            el.classList.remove('hidden');
+        }
+
+        // Copy result to clipboard
+        function copyResult(elementId) {
+            const el = document.getElementById(elementId);
+            const text = el.textContent;
+            const btn = el.parentElement.querySelector('.copy-btn');
+
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 1500);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 1500);
+            });
+        }
+
+        // Handle Enter key in inputs
+        document.getElementById('epoch-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                convertEpochToHuman();
+            }
+        });
+
+        document.getElementById('human-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                convertHumanToEpoch();
+            }
+        });
+
+        // Load state from URL on page load
+        loadFromUrl();
+    </script>
+</body>
+</html>
