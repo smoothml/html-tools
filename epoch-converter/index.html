@@ -235,6 +235,19 @@
             display: none !important;
         }
 
+        .home-link {
+            display: inline-block;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        .home-link:hover {
+            color: #007bff;
+        }
+
         @media (max-width: 600px) {
             .input-row {
                 flex-direction: column;
@@ -248,6 +261,7 @@
 </head>
 <body>
     <div class="container">
+        <a href="/" class="home-link">&larr; Home</a>
         <h1>Epoch Converter</h1>
 
         <div class="current-time">
