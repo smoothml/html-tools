@@ -181,6 +181,19 @@
             display: none !important;
         }
 
+        .home-link {
+            display: inline-block;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        .home-link:hover {
+            color: #007bff;
+        }
+
         .speed-read-controls {
             display: flex;
             align-items: center;
@@ -464,6 +477,7 @@
 </head>
 <body>
     <div class="container">
+        <a href="/" class="home-link">&larr; Home</a>
         <h1>Article Reader</h1>
 
         <div class="input-section">
