@@ -352,6 +352,108 @@
             background: #0056b3;
             border-color: #0056b3;
         }
+
+        /* Prevent text selection on interactive elements */
+        .spritz-container,
+        .spritz-controls,
+        .spritz-btn,
+        .speed-read-controls,
+        .wpm-slider-container,
+        #wpm-slider,
+        #wpm-display,
+        button {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Improve touch responsiveness */
+        button,
+        .spritz-btn,
+        #wpm-slider {
+            touch-action: manipulation;
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 20px;
+            }
+
+            .input-section {
+                flex-wrap: wrap;
+            }
+
+            #url-input {
+                width: 100%;
+                flex: none;
+            }
+
+            #extract-btn,
+            #new-article-btn {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .article-content {
+                padding: 20px;
+            }
+
+            .article-content h1 {
+                font-size: 1.5em;
+            }
+
+            .speed-read-controls {
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .spritz-container {
+                padding: 20px;
+                min-height: 250px;
+            }
+
+            .spritz-word-display {
+                font-size: 28px;
+                height: 60px;
+            }
+
+            .spritz-before,
+            .spritz-after {
+                min-width: 100px;
+            }
+
+            .spritz-orp {
+                min-width: 20px;
+            }
+
+            .wpm-slider-container {
+                width: 100%;
+                justify-content: center;
+            }
+
+            #wpm-slider {
+                width: 120px;
+                height: 24px;
+            }
+
+            .spritz-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+
+            .spritz-btn-primary {
+                width: 54px;
+                height: 54px;
+                font-size: 22px;
+            }
+        }
     </style>
 </head>
 <body>
